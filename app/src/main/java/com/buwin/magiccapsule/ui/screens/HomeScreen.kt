@@ -23,15 +23,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Thermostat
+import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
+import io.github.alexzhirkevich.cupertino.icons.filled.Bell
+import io.github.alexzhirkevich.cupertino.icons.filled.Bolt
+import io.github.alexzhirkevich.cupertino.icons.filled.CheckmarkCircle
+import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronBackward
+import io.github.alexzhirkevich.cupertino.icons.outlined.Gearshape
+import io.github.alexzhirkevich.cupertino.icons.outlined.Moon
+import io.github.alexzhirkevich.cupertino.icons.outlined.Shield
+import io.github.alexzhirkevich.cupertino.icons.outlined.SunMax
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -75,8 +75,10 @@ import com.buwin.magiccapsule.ui.theme.cardBorderColor
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /**
@@ -87,7 +89,8 @@ fun HomeScreen(
     themePreferences: ThemePreferences,
     hasNotificationPermission: Boolean,
     onRequestNotificationPermission: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val isDark = LocalIsDark.current
@@ -112,7 +115,8 @@ fun HomeScreen(
     // Live telemetry polling while on-screen
     LaunchedEffect(Unit) {
         while (isActive) {
-            batteryInfo = batteryReader.readBatteryInfo()
+            val info = withContext(Dispatchers.IO) { batteryReader.readBatteryInfo() }
+            batteryInfo = info
             isCapsuleServiceRunning = ChargingCapsuleService.isRunning
             delay(1000L)
         }
@@ -126,7 +130,7 @@ fun HomeScreen(
                 .layerBackdrop(rootBackdrop),
             contentPadding = PaddingValues(
                 top = 114.dp,
-                bottom = 48.dp,
+                bottom = 120.dp,
                 start = 16.dp,
                 end = 16.dp
             ),
@@ -137,7 +141,6 @@ fun HomeScreen(
                 item {
                     PermissionNoticeCard(
                         onRequestPermission = onRequestNotificationPermission,
-                        backdrop = rootBackdrop,
                         isDark = isDark
                     )
                 }
@@ -147,8 +150,7 @@ fun HomeScreen(
             item {
                 TelemetryHeroCard(
                     info = batteryInfo,
-                    isDark = isDark,
-                    backdrop = rootBackdrop
+                    isDark = isDark
                 )
             }
 
@@ -165,7 +167,6 @@ fun HomeScreen(
                             isCapsuleServiceRunning = true
                         }
                     },
-                    backdrop = rootBackdrop,
                     isDark = isDark
                 )
             }
@@ -178,7 +179,6 @@ fun HomeScreen(
                         capsuleFormat = format
                         prefs.capsuleFormat = format
                     },
-                    backdrop = rootBackdrop,
                     isDark = isDark
                 )
             }
@@ -221,7 +221,6 @@ fun HomeScreen(
                         updateInterval = it
                         prefs.updateIntervalMs = it.toLong()
                     },
-                    backdrop = rootBackdrop,
                     isDark = isDark
                 )
             }
@@ -242,6 +241,21 @@ fun HomeScreen(
             backdrop = rootBackdrop,
             isDark = isDark,
             headerHeight = 104.dp,
+            navigationIcon = onBack?.let {
+                {
+                    LiquidRoundButton(
+                        onClick = it,
+                        size = 38.dp,
+                        isDark = isDark
+                    ) {
+                        Icon(
+                            imageVector = CupertinoIcons.Default.ChevronBackward,
+                            contentDescription = "Quay lại",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            },
             title = {
                 Column {
                     Row(
@@ -290,15 +304,14 @@ fun HomeScreen(
                         }
                         themePreferences.setThemeMode(nextMode)
                     },
-                    backdrop = rootBackdrop,
                     size = 40.dp,
                     isDark = isDark,
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
                     val icon = when (themePreferences.currentThemeMode) {
-                        AppThemeMode.SYSTEM -> Icons.Default.Speed
-                        AppThemeMode.LIGHT -> Icons.Default.LightMode
-                        AppThemeMode.DARK -> Icons.Default.DarkMode
+                        AppThemeMode.SYSTEM -> CupertinoIcons.Default.Gearshape
+                        AppThemeMode.LIGHT -> CupertinoIcons.Default.SunMax
+                        AppThemeMode.DARK -> CupertinoIcons.Default.Moon
                     }
                     Icon(
                         imageVector = icon,
@@ -319,7 +332,6 @@ fun HomeScreen(
 private fun TelemetryHeroCard(
     info: BatteryInfo,
     isDark: Boolean,
-    backdrop: Backdrop,
     modifier: Modifier = Modifier
 ) {
     val cardBg = if (isDark) Color(0xFF141416) else Color(0xFFFFFFFF)
@@ -357,7 +369,7 @@ private fun TelemetryHeroCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Bolt,
+                        imageVector = CupertinoIcons.Filled.Bolt,
                         contentDescription = null,
                         tint = chargingColor,
                         modifier = Modifier.size(16.dp)
@@ -486,7 +498,6 @@ private fun MetricMiniCard(
 private fun TestCapsuleActionCard(
     isRunning: Boolean,
     onToggleTest: () -> Unit,
-    backdrop: Backdrop,
     isDark: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -523,7 +534,6 @@ private fun TestCapsuleActionCard(
 
             LiquidButton(
                 onClick = onToggleTest,
-                backdrop = backdrop,
                 variant = if (isRunning) LiquidButtonVariant.Tinted else LiquidButtonVariant.Surface,
                 tint = if (isRunning) Color(0xFFFF3B30) else Color(0xFF007AFF),
                 modifier = Modifier
@@ -536,7 +546,7 @@ private fun TestCapsuleActionCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
-                        imageVector = if (isRunning) Icons.Default.Bolt else Icons.Default.NotificationsActive,
+                        imageVector = if (isRunning) CupertinoIcons.Filled.Bolt else CupertinoIcons.Filled.Bell,
                         contentDescription = null,
                         tint = if (isRunning) Color.White else (if (isDark) Color(0xFF64B5F6) else Color(0xFF007AFF)),
                         modifier = Modifier.size(18.dp)
@@ -560,7 +570,6 @@ private fun TestCapsuleActionCard(
 private fun CapsuleFormatSelectorCard(
     selectedFormat: CapsuleFormat,
     onFormatSelected: (CapsuleFormat) -> Unit,
-    backdrop: Backdrop,
     isDark: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -631,7 +640,7 @@ private fun CapsuleFormatSelectorCard(
                         )
                         if (isSelected) {
                             Icon(
-                                imageVector = Icons.Default.CheckCircle,
+                                imageVector = CupertinoIcons.Filled.CheckmarkCircle,
                                 contentDescription = null,
                                 tint = if (isDark) Color(0xFF64B5F6) else Color(0xFF007AFF),
                                 modifier = Modifier.size(18.dp)
@@ -663,7 +672,6 @@ private fun SettingsSectionCard(
     onShowTempChanged: (Boolean) -> Unit,
     updateIntervalMs: Float,
     onUpdateIntervalChanged: (Float) -> Unit,
-    backdrop: Backdrop,
     isDark: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -693,7 +701,6 @@ private fun SettingsSectionCard(
                 subtitle = "Tự khởi động Magic Capsule ngay khi phát hiện cắm sạc",
                 selected = autoStart,
                 onSelect = onAutoStartChanged,
-                backdrop = backdrop,
                 isDark = isDark
             )
 
@@ -704,7 +711,6 @@ private fun SettingsSectionCard(
                 subtitle = "Đóng Capsule sau khi quá trình sạc hoàn tất",
                 selected = autoDismiss,
                 onSelect = onAutoDismissChanged,
-                backdrop = backdrop,
                 isDark = isDark
             )
 
@@ -715,7 +721,6 @@ private fun SettingsSectionCard(
                 subtitle = "Hiển thị cường độ dòng điện trong chi tiết thông báo",
                 selected = showCurrent,
                 onSelect = onShowCurrentChanged,
-                backdrop = backdrop,
                 isDark = isDark
             )
 
@@ -726,7 +731,6 @@ private fun SettingsSectionCard(
                 subtitle = "Hiển thị điện áp pin thực tế",
                 selected = showVoltage,
                 onSelect = onShowVoltageChanged,
-                backdrop = backdrop,
                 isDark = isDark
             )
 
@@ -737,7 +741,6 @@ private fun SettingsSectionCard(
                 subtitle = "Theo dõi độ nóng máy để bảo vệ pin",
                 selected = showTemp,
                 onSelect = onShowTempChanged,
-                backdrop = backdrop,
                 isDark = isDark
             )
 
@@ -771,7 +774,6 @@ private fun SettingsSectionCard(
                     onValueChange = onUpdateIntervalChanged,
                     valueRange = 500f..3000f,
                     visibilityThreshold = 100f,
-                    backdrop = backdrop,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -785,7 +787,6 @@ private fun SettingToggleRow(
     subtitle: String,
     selected: Boolean,
     onSelect: (Boolean) -> Unit,
-    backdrop: Backdrop,
     isDark: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -809,8 +810,7 @@ private fun SettingToggleRow(
         }
         LiquidToggle(
             selected = { selected },
-            onSelect = onSelect,
-            backdrop = backdrop
+            onSelect = onSelect
         )
     }
 }
@@ -839,7 +839,7 @@ private fun SecurityInfoCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Security,
+                imageVector = CupertinoIcons.Default.Shield,
                 contentDescription = null,
                 tint = Color(0xFF34C759),
                 modifier = Modifier.size(24.dp)
@@ -869,7 +869,6 @@ private fun SecurityInfoCard(
 @Composable
 private fun PermissionNoticeCard(
     onRequestPermission: () -> Unit,
-    backdrop: Backdrop,
     isDark: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -901,7 +900,6 @@ private fun PermissionNoticeCard(
             }
             LiquidButton(
                 onClick = onRequestPermission,
-                backdrop = backdrop,
                 variant = LiquidButtonVariant.Tinted,
                 tint = Color(0xFFFF9500),
                 isDark = isDark,

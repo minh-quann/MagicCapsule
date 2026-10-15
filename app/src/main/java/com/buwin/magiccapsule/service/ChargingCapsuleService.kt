@@ -55,7 +55,7 @@ class ChargingCapsuleService : Service() {
     }
 
     companion object {
-        const val CHANNEL_ID = "charging_capsule"
+        const val CHANNEL_ID = "magic_charging_live_v5"
         const val NOTIFICATION_ID = 2026
         const val ACTION_START = "com.buwin.magiccapsule.action.START"
         const val ACTION_STOP = "com.buwin.magiccapsule.action.STOP"
@@ -86,6 +86,12 @@ class ChargingCapsuleService : Service() {
     override fun onCreate() {
         super.onCreate()
         isRunning = true
+        ForegroundHelper.startForegroundServiceCompat(
+            service = this,
+            notificationId = NOTIFICATION_ID,
+            title = "Công suất sạc pin",
+            foregroundServiceType = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+        )
         batteryStatsReader = BatteryStatsReader(this)
         preferences = CapsulePreferences(this)
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -219,15 +225,27 @@ class ChargingCapsuleService : Service() {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
+            .setTicker(capsuleTitle)
             .setCategory(Notification.CATEGORY_PROGRESS)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
+            .setStyle(Notification.BigTextStyle().bigText(details))
             .addExtras(capsuleExtras)
 
-        // Android 16+ / Vendor Short Critical Text
+        // Android 16/17 (API 36+) Promoted Ongoing status bar chip / Magic Capsule text
         if (Build.VERSION.SDK_INT >= 36) {
             try {
                 val method = Notification.Builder::class.java.getMethod("setShortCriticalText", CharSequence::class.java)
                 method.invoke(builder, capsuleTitle)
+            } catch (_: Exception) {
+                try {
+                    val method = Notification.Builder::class.java.getMethod("setShortCriticalText", String::class.java)
+                    method.invoke(builder, capsuleTitle)
+                } catch (_: Exception) {}
+            }
+
+            try {
+                val method = Notification.Builder::class.java.getMethod("setRequestPromotedOngoing", Boolean::class.javaPrimitiveType)
+                method.invoke(builder, true)
             } catch (_: Exception) {}
         }
 
@@ -236,15 +254,20 @@ class ChargingCapsuleService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                notificationManager.deleteNotificationChannel("charging_capsule")
+            } catch (_: Exception) {}
+
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Magic Capsule - Đo công suất sạc",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Hiển thị công suất sạc trực tiếp trên Magic Capsule trạng thái của Honor MagicOS"
                 setSound(null, null)
                 enableVibration(false)
                 setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
             notificationManager.createNotificationChannel(channel)
         }

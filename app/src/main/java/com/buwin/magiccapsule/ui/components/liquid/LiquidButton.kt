@@ -1,6 +1,8 @@
 package com.buwin.magiccapsule.ui.components.liquid
 
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -27,6 +30,7 @@ import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.lerp
 import com.buwin.magiccapsule.ui.theme.LocalIsDark
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.rememberCanvasBackdrop
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
@@ -63,7 +67,7 @@ enum class LiquidButtonVariant {
 @Composable
 fun LiquidButton(
     onClick: () -> Unit,
-    backdrop: Backdrop,
+    backdrop: Backdrop? = null,
     modifier: Modifier = Modifier,
     variant: LiquidButtonVariant = LiquidButtonVariant.Surface,
     tint: Color = Color.Unspecified,
@@ -111,83 +115,87 @@ fun LiquidButton(
         )
     }
 
+    val effectiveBackdrop = backdrop ?: rememberCanvasBackdrop { drawRect(containerColor) }
+
+    val backgroundModifier = Modifier.drawBackdrop(
+        backdrop = effectiveBackdrop,
+        shape = { shape },
+        effects = {
+            vibrancy()
+            blur(blurRadius.toPx())
+            lens(lensHeight.toPx(), lensWidth.toPx())
+        },
+        highlight = {
+            if (showBorder) {
+                Highlight.Plain
+            } else {
+                Highlight.Default.copy(alpha = if (isLightTheme) 0.55f else 0.35f)
+            }
+        },
+        shadow = {
+            Shadow(
+                radius = 8f.dp,
+                color = if (isLightTheme) Color.Black.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.35f)
+            )
+        },
+        innerShadow = {
+            InnerShadow(
+                radius = 6f.dp,
+                alpha = if (isLightTheme) 0.08f else 0.18f
+            )
+        },
+        layerBlock = if (isInteractive) {
+            {
+                val width = size.width
+                val height = size.height
+
+                val progress = interactiveHighlight.pressProgress
+                val scale = lerp(1f, 1f + 4f.dp.toPx() / size.height, progress)
+
+                val maxOffset = size.minDimension
+                val initialDerivative = 0.05f
+                val offset = interactiveHighlight.offset
+                translationX = maxOffset * tanh(initialDerivative * offset.x / maxOffset)
+                translationY = maxOffset * tanh(initialDerivative * offset.y / maxOffset)
+
+                val maxDragScale = 4f.dp.toPx() / size.height
+                val offsetAngle = atan2(offset.y, offset.x)
+                scaleX =
+                    scale +
+                            maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension) *
+                            (width / height).fastCoerceAtMost(1f)
+                scaleY =
+                    scale +
+                            maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension) *
+                            (height / width).fastCoerceAtMost(1f)
+            }
+        } else {
+            null
+        },
+        onDrawSurface = {
+            when (resolvedVariant) {
+                LiquidButtonVariant.Transparent -> {
+                    // Pure transparent liquid glass - no surface color drawn
+                }
+                LiquidButtonVariant.Surface -> {
+                    drawRect(containerColor)
+                }
+                LiquidButtonVariant.Tinted -> {
+                    val effectiveTint = if (tint.isSpecified) tint else Color(0xFF007AFF)
+                    drawRect(effectiveTint, blendMode = BlendMode.Hue)
+                    drawRect(effectiveTint.copy(alpha = 0.75f))
+                    if (surfaceColor.isSpecified) {
+                        drawRect(surfaceColor)
+                    }
+                }
+            }
+        }
+    )
+
     Row(
         modifier
             .defaultMinSize(minHeight = 48.dp)
-            .drawBackdrop(
-                backdrop = backdrop,
-                shape = { shape },
-                effects = {
-                    vibrancy()
-                    blur(blurRadius.toPx())
-                    lens(lensHeight.toPx(), lensWidth.toPx())
-                },
-                highlight = {
-                    if (showBorder) {
-                        Highlight.Plain
-                    } else {
-                        Highlight.Default.copy(alpha = if (isLightTheme) 0.55f else 0.35f)
-                    }
-                },
-                shadow = {
-                    Shadow(
-                        radius = 8f.dp,
-                        color = if (isLightTheme) Color.Black.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.35f)
-                    )
-                },
-                innerShadow = {
-                    InnerShadow(
-                        radius = 6f.dp,
-                        alpha = if (isLightTheme) 0.08f else 0.18f
-                    )
-                },
-                layerBlock = if (isInteractive) {
-                    {
-                        val width = size.width
-                        val height = size.height
-
-                        val progress = interactiveHighlight.pressProgress
-                        val scale = lerp(1f, 1f + 4f.dp.toPx() / size.height, progress)
-
-                        val maxOffset = size.minDimension
-                        val initialDerivative = 0.05f
-                        val offset = interactiveHighlight.offset
-                        translationX = maxOffset * tanh(initialDerivative * offset.x / maxOffset)
-                        translationY = maxOffset * tanh(initialDerivative * offset.y / maxOffset)
-
-                        val maxDragScale = 4f.dp.toPx() / size.height
-                        val offsetAngle = atan2(offset.y, offset.x)
-                        scaleX =
-                            scale +
-                                    maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension) *
-                                    (width / height).fastCoerceAtMost(1f)
-                        scaleY =
-                            scale +
-                                    maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension) *
-                                    (height / width).fastCoerceAtMost(1f)
-                    }
-                } else {
-                    null
-                },
-                onDrawSurface = {
-                    when (resolvedVariant) {
-                        LiquidButtonVariant.Transparent -> {
-                            // Pure transparent liquid glass - no surface color drawn
-                        }
-                        LiquidButtonVariant.Surface -> {
-                            drawRect(containerColor)
-                        }
-                        LiquidButtonVariant.Tinted -> {
-                            val effectiveTint = if (tint.isSpecified) tint else Color(0xFF007AFF)
-                            drawRect(effectiveTint, blendMode = BlendMode.Hue)
-                            drawRect(effectiveTint.copy(alpha = 0.75f))
-                            if (surfaceColor.isSpecified) {
-                                drawRect(surfaceColor)
-                            }
-                        }
-                    }
-                }
-            )
+            .then(backgroundModifier)
             .clickable(
                 interactionSource = null,
                 indication = if (isInteractive) null else LocalIndication.current,
@@ -219,7 +227,7 @@ fun LiquidButton(
 @Composable
 fun TransparentLiquidButton(
     onClick: () -> Unit,
-    backdrop: Backdrop,
+    backdrop: Backdrop? = null,
     modifier: Modifier = Modifier,
     contentColor: Color = Color.Unspecified,
     isInteractive: Boolean = true,
@@ -250,7 +258,7 @@ fun TransparentLiquidButton(
 @Composable
 fun SurfaceLiquidButton(
     onClick: () -> Unit,
-    backdrop: Backdrop,
+    backdrop: Backdrop? = null,
     modifier: Modifier = Modifier,
     surfaceColor: Color = Color.Unspecified,
     contentColor: Color = Color.Unspecified,
@@ -283,8 +291,8 @@ fun SurfaceLiquidButton(
 @Composable
 fun TintedLiquidButton(
     onClick: () -> Unit,
-    backdrop: Backdrop,
     tint: Color,
+    backdrop: Backdrop? = null,
     modifier: Modifier = Modifier,
     contentColor: Color = Color.White,
     isInteractive: Boolean = true,

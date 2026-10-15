@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Magic Capsule</string>
+    <string name="accessibility_service_description">Dịch vụ hỗ trợ giữ tiến trình Magic Capsule luôn chạy nền ổn định trên Honor MagicOS.</string>
+    <string name="tile_capsule">Magic Capsule</string>
+    <string name="tile_pin_app">Ghim ứng dụng</string>
+    <string name="tile_quick_return">Trở về nhanh</string>
 </resources>

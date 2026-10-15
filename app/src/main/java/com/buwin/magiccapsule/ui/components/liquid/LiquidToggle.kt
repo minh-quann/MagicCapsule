@@ -53,7 +53,7 @@ import kotlinx.coroutines.flow.collectLatest
 fun LiquidToggle(
     selected: () -> Boolean,
     onSelect: (Boolean) -> Unit,
-    backdrop: Backdrop,
+    backdrop: Backdrop? = null,
     modifier: Modifier = Modifier
 ) {
     val isLightTheme = !LocalIsDark.current
@@ -165,8 +165,19 @@ fun LiquidToggle(
                 }
                 .then(dampedDragAnimation.modifier)
                 .drawBackdrop(
-                    backdrop = rememberCombinedBackdrop(
-                        backdrop,
+                    backdrop = if (backdrop != null) {
+                        rememberCombinedBackdrop(
+                            backdrop,
+                            rememberBackdrop(trackBackdrop) { drawBackdrop ->
+                                val progress = dampedDragAnimation.pressProgress
+                                val scaleX = lerp(2f / 3f, 0.75f, progress)
+                                val scaleY = lerp(0f, 0.75f, progress)
+                                scale(scaleX, scaleY) {
+                                    drawBackdrop()
+                                }
+                            }
+                        )
+                    } else {
                         rememberBackdrop(trackBackdrop) { drawBackdrop ->
                             val progress = dampedDragAnimation.pressProgress
                             val scaleX = lerp(2f / 3f, 0.75f, progress)
@@ -175,7 +186,7 @@ fun LiquidToggle(
                                 drawBackdrop()
                             }
                         }
-                    ),
+                    },
                     shape = { Capsule() },
                     effects = {
                         val progress = dampedDragAnimation.pressProgress
@@ -231,7 +242,7 @@ fun LiquidToggle(
 fun LiquidToggle(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    backdrop: Backdrop,
+    backdrop: Backdrop? = null,
     modifier: Modifier = Modifier
 ) {
     LiquidToggle(

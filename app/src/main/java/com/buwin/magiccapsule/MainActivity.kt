@@ -13,7 +13,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
-import com.buwin.magiccapsule.ui.screens.HomeScreen
+import com.buwin.magiccapsule.service.KeepAliveScheduler
+import com.buwin.magiccapsule.ui.navigation.MainTabContainer
 import com.buwin.magiccapsule.ui.theme.AppThemeMode
 import com.buwin.magiccapsule.ui.theme.MagicCapsuleTheme
 import com.buwin.magiccapsule.ui.theme.ThemePreferences
@@ -23,10 +24,10 @@ class MainActivity : ComponentActivity() {
     private val themePreferences by lazy { ThemePreferences(this) }
     private var hasNotificationPermission by mutableStateOf(false)
 
-    private val notificationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        hasNotificationPermission = isGranted
+    private val permissionsLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        hasNotificationPermission = results[Manifest.permission.POST_NOTIFICATIONS] ?: hasNotificationPermission
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,6 +35,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         checkNotificationPermission()
+        requestCorePermissions()
+        try {
+            KeepAliveScheduler.recoverServices(this)
+            com.buwin.magiccapsule.service.MagicNotificationListenerService.ensureServiceBound(this)
+        } catch (_: Exception) {
+            // Silently ignore if recover fails during cold start
+        }
 
         setContent {
             val isDark = when (themePreferences.currentThemeMode) {
@@ -43,11 +51,11 @@ class MainActivity : ComponentActivity() {
             }
 
             MagicCapsuleTheme(darkTheme = isDark) {
-                HomeScreen(
+                MainTabContainer(
                     themePreferences = themePreferences,
                     hasNotificationPermission = hasNotificationPermission,
                     onRequestNotificationPermission = {
-                        requestNotificationPermission()
+                        requestCorePermissions()
                     }
                 )
             }
@@ -57,6 +65,9 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         checkNotificationPermission()
+        try {
+            com.buwin.magiccapsule.service.MagicNotificationListenerService.ensureServiceBound(this)
+        } catch (_: Exception) {}
     }
 
     private fun checkNotificationPermission() {
@@ -70,9 +81,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun requestNotificationPermission() {
+    private fun requestCorePermissions() {
+        val permissions = mutableListOf<String>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+        }
+        permissions.add(Manifest.permission.RECEIVE_SMS)
+        permissions.add(Manifest.permission.READ_CALENDAR)
+
+        permissionsLauncher.launch(permissions.toTypedArray())
     }
 }

@@ -52,7 +52,7 @@ fun LiquidSlider(
     onValueChange: (Float) -> Unit,
     valueRange: ClosedFloatingPointRange<Float>,
     visibilityThreshold: Float,
-    backdrop: Backdrop,
+    backdrop: Backdrop? = null,
     modifier: Modifier = Modifier
 ) {
     val isLightTheme = !isSystemInDarkTheme()
@@ -136,8 +136,19 @@ fun LiquidSlider(
                             .fastCoerceIn(-size.width / 4f, trackWidth - size.width * 3f / 4f) * if (isLtr) 1f else -1f
                 }
                 .drawBackdrop(
-                    backdrop = rememberCombinedBackdrop(
-                        backdrop,
+                    backdrop = if (backdrop != null) {
+                        rememberCombinedBackdrop(
+                            backdrop,
+                            rememberBackdrop(trackBackdrop) { drawBackdrop ->
+                                val progress = dampedDragAnimation.pressProgress
+                                val scaleX = lerp(2f / 3f, 1f, progress)
+                                val scaleY = lerp(0f, 1f, progress)
+                                scale(scaleX, scaleY) {
+                                    drawBackdrop()
+                                }
+                            }
+                        )
+                    } else {
                         rememberBackdrop(trackBackdrop) { drawBackdrop ->
                             val progress = dampedDragAnimation.pressProgress
                             val scaleX = lerp(2f / 3f, 1f, progress)
@@ -146,7 +157,7 @@ fun LiquidSlider(
                                 drawBackdrop()
                             }
                         }
-                    ),
+                    },
                     shape = { Capsule() },
                     effects = {
                         val progress = dampedDragAnimation.pressProgress

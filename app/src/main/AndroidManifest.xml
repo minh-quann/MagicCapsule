@@ -2,10 +2,57 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Network & Internet Telemetry -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <!-- Honor MagicOS Magic Capsule & Notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+
+    <!-- Foreground Services -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+
+    <!-- Decibel & Loudness Island -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Bluetooth Headset Island -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+
+    <!-- Background Keep-Alive & Battery Whitelist -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+    <!-- SMS OTP & Delivery Pickup Code Interception -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+
+    <!-- Calendar Island Countdown -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+
+    <!-- Pin App & Usage Tracking -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
+
+    <!-- Shizuku Privileged API -->
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <package android:name="moe.shizuku.privileged.api" />
+        <package android:name="moe.shizuku.manager" />
+        <package android:name="com.mesugaki.shizuku" />
+    </queries>
 
     <application
         android:allowBackup="true"
@@ -17,6 +64,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MagicCapsule">
 
+        <!-- Main Dashboard Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -30,7 +78,18 @@
             </intent-filter>
         </activity>
 
-        <!-- Foreground Service for Honor Magic Capsule Live Charging Updates -->
+        <!-- Transparent Click Bridge Activity for Live Capsule -->
+        <activity
+            android:name=".service.LiveUpdateClickProxyActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:finishOnTaskLaunch="true"
+            android:launchMode="singleTop"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <!-- Foreground Service: Charging Wattage Live Capsule -->
         <service
             android:name=".service.ChargingCapsuleService"
             android:exported="false"
@@ -40,7 +99,116 @@
                 android:value="Charging Wattage and Battery Stats Live Capsule for Honor MagicOS" />
         </service>
 
-        <!-- BroadcastReceiver for Charger Plugged / Unplugged -->
+        <!-- Foreground Service: Hardware Telemetry (RAM & Network Speed) -->
+        <service
+            android:name=".service.DeviceMonitorService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Hardware and Network Speed Live Capsule for Honor MagicOS" />
+        </service>
+
+        <!-- Foreground Service: Calendar Event Countdown -->
+        <service
+            android:name=".service.CalendarLiveUpdateService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Calendar Event Countdown Live Capsule for Honor MagicOS" />
+        </service>
+
+        <!-- Foreground Service: API & Webhook Dispatcher -->
+        <service
+            android:name=".service.ApiLiveUpdateService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="External Webhook and API Live Capsule for Honor MagicOS" />
+        </service>
+
+        <!-- Foreground Service: Face Unlock Monitor -->
+        <service
+            android:name=".service.FaceUnlockMonitorService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Face Unlock State Live Capsule for Honor MagicOS" />
+        </service>
+
+        <!-- Foreground Service: Loudness & Decibel Meter -->
+        <service
+            android:name=".service.LoudnessMonitorService"
+            android:exported="false"
+            android:foregroundServiceType="microphone|specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Ambient Loudness and Decibel Meter Live Capsule for Honor MagicOS" />
+        </service>
+
+        <!-- Notification Listener Service: Media, OTP, Screen Record, Chat Mirroring -->
+        <service
+            android:name=".service.MagicNotificationListenerService"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- Accessibility Keep-Alive Service for MagicOS Immortal Process -->
+        <service
+            android:name=".service.KeepAliveAccessibilityService"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <!-- Quick Settings Tile: Toggle Magic Capsule -->
+        <service
+            android:name=".service.KeepAliveTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_notification"
+            android:label="@string/tile_capsule"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Quick Settings Tile: Pin App -->
+        <service
+            android:name=".service.PinAppTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_pin"
+            android:label="@string/tile_pin_app"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Quick Settings Tile: Quick Return -->
+        <service
+            android:name=".service.QuickReturnTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_keyboard_return"
+            android:label="@string/tile_quick_return"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Broadcast Receiver: Charger Plug / Unplug -->
         <receiver
             android:name=".receiver.PowerConnectionReceiver"
             android:exported="true">
@@ -48,6 +216,63 @@
                 <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
                 <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Broadcast Receiver: Bluetooth Accessory Connection -->
+        <receiver
+            android:name=".receiver.BluetoothReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
+                <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Broadcast Receiver: Incoming SMS Interception -->
+        <receiver
+            android:name=".receiver.SmsReceiver"
+            android:exported="true">
+            <intent-filter android:priority="1000">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Broadcast Receiver: Tap-to-Copy OTP Code -->
+        <receiver
+            android:name=".receiver.OtpCopyReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.buwin.magiccapsule.action.COPY_OTP" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Broadcast Receiver: AlarmManager Keep-Alive Tick -->
+        <receiver
+            android:name=".receiver.KeepAliveTickReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.buwin.magiccapsule.KEEP_ALIVE_TICK" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Broadcast Receiver: Screen On / Unlock Recovery -->
+        <receiver
+            android:name=".receiver.ScreenOnRecoveryReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.SCREEN_ON" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Broadcast Receiver: Download Manager Complete -->
+        <receiver
+            android:name=".receiver.DownloadCompleteReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
             </intent-filter>
         </receiver>
 
