@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
+import com.buwin.magiccapsule.data.preferences.AppFeaturePreferences
 import com.buwin.magiccapsule.data.preferences.CapsulePreferences
 import com.buwin.magiccapsule.service.ChargingCapsuleService
 
@@ -16,10 +17,13 @@ class PowerConnectionReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val prefs = CapsulePreferences(context)
+        val featurePrefs = AppFeaturePreferences(context)
+
+        val isEnabled = prefs.autoStartOnPlug && featurePrefs.isPowerIslandEnabled
 
         when (intent.action) {
             Intent.ACTION_POWER_CONNECTED -> {
-                if (prefs.autoStartOnPlug) {
+                if (isEnabled) {
                     ChargingCapsuleService.start(context)
                 }
             }
@@ -29,7 +33,7 @@ class PowerConnectionReceiver : BroadcastReceiver() {
             }
 
             Intent.ACTION_BOOT_COMPLETED -> {
-                if (prefs.autoStartOnPlug && isDeviceCharging(context)) {
+                if (isEnabled && isDeviceCharging(context)) {
                     ChargingCapsuleService.start(context)
                 }
             }

@@ -16,9 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Warning
+import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
+import io.github.alexzhirkevich.cupertino.icons.filled.ExclamationmarkTriangle
+import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronBackward
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -87,7 +87,7 @@ fun DeviceAlertSubPage(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFF9500), modifier = Modifier.size(20.dp))
+                            Icon(imageVector = CupertinoIcons.Filled.ExclamationmarkTriangle, contentDescription = null, tint = Color(0xFFFF9500), modifier = Modifier.size(20.dp))
                             Text("Đảo nhắc nhở thiết bị", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color.White else Color(0xFF1C1917))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -175,7 +175,7 @@ fun DeviceAlertSubPage(
             isDark = isDark,
             navigationIcon = {
                 LiquidRoundButton(onClick = onBack, size = 38.dp, isDark = isDark) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại", modifier = Modifier.size(18.dp))
+                    Icon(imageVector = CupertinoIcons.Default.ChevronBackward, contentDescription = "Quay lại", modifier = Modifier.size(18.dp))
                 }
             },
             title = {

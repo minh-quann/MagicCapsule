@@ -11,9 +11,9 @@ class AppFeaturePreferences(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("magic_capsule_features_prefs", Context.MODE_PRIVATE)
 
-    // Feature Master Toggles
+    // Feature Master Toggles (All disabled by default as requested)
     var isPowerIslandEnabled: Boolean
-        get() = prefs.getBoolean(KEY_POWER_ENABLED, true)
+        get() = prefs.getBoolean(KEY_POWER_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_POWER_ENABLED, value).apply()
 
     var isDeviceIslandEnabled: Boolean
@@ -21,19 +21,19 @@ class AppFeaturePreferences(context: Context) {
         set(value) = prefs.edit().putBoolean(KEY_DEVICE_ENABLED, value).apply()
 
     var isSmsIslandEnabled: Boolean
-        get() = prefs.getBoolean(KEY_SMS_ENABLED, true)
+        get() = prefs.getBoolean(KEY_SMS_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_SMS_ENABLED, value).apply()
 
     var isLyricsIslandEnabled: Boolean
-        get() = prefs.getBoolean(KEY_LYRICS_ENABLED, true)
+        get() = prefs.getBoolean(KEY_LYRICS_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_LYRICS_ENABLED, value).apply()
 
     var isNotificationIslandEnabled: Boolean
-        get() = prefs.getBoolean(KEY_NOTIFY_ENABLED, true)
+        get() = prefs.getBoolean(KEY_NOTIFY_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_NOTIFY_ENABLED, value).apply()
 
     var isHeadsetIslandEnabled: Boolean
-        get() = prefs.getBoolean(KEY_HEADSET_ENABLED, true)
+        get() = prefs.getBoolean(KEY_HEADSET_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_HEADSET_ENABLED, value).apply()
 
     var isFaceUnlockIslandEnabled: Boolean
@@ -49,15 +49,15 @@ class AppFeaturePreferences(context: Context) {
         set(value) = prefs.edit().putBoolean(KEY_API_ENABLED, value).apply()
 
     var isDownloadIslandEnabled: Boolean
-        get() = prefs.getBoolean(KEY_DOWNLOAD_ENABLED, true)
+        get() = prefs.getBoolean(KEY_DOWNLOAD_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_DOWNLOAD_ENABLED, value).apply()
 
     var isScreenRecordIslandEnabled: Boolean
-        get() = prefs.getBoolean(KEY_SCREEN_RECORD_ENABLED, true)
+        get() = prefs.getBoolean(KEY_SCREEN_RECORD_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_SCREEN_RECORD_ENABLED, value).apply()
 
     var isPinAppIslandEnabled: Boolean
-        get() = prefs.getBoolean(KEY_PIN_APP_ENABLED, true)
+        get() = prefs.getBoolean(KEY_PIN_APP_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_PIN_APP_ENABLED, value).apply()
 
     var isLoudnessIslandEnabled: Boolean
@@ -113,7 +113,7 @@ class AppFeaturePreferences(context: Context) {
         set(value) = prefs.edit().putBoolean(KEY_NOTIFY_FILTER_IMPORTANT, value).apply()
 
     var isHideOriginalNotification: Boolean
-        get() = prefs.getBoolean(KEY_NOTIFY_HIDE_ORIGINAL, true)
+        get() = prefs.getBoolean(KEY_NOTIFY_HIDE_ORIGINAL, false)
         set(value) = prefs.edit().putBoolean(KEY_NOTIFY_HIDE_ORIGINAL, value).apply()
 
     var isAllowCallCapsule: Boolean
@@ -129,23 +129,11 @@ class AppFeaturePreferences(context: Context) {
         set(value) = prefs.edit().putBoolean(KEY_NOTIFY_ALLOW_OTHER, value).apply()
 
     var notificationAllowedApps: Set<String>
-        get() = prefs.getStringSet(KEY_NOTIFY_ALLOWED_APPS, setOf(
-            "com.zing.zalo",
-            "com.facebook.orca",
-            "org.telegram.messenger",
-            "com.whatsapp",
-            "com.google.android.apps.messaging",
-            "com.viber.voip",
-            "com.google.android.gm"
-        )) ?: emptySet()
+        get() = prefs.getStringSet(KEY_NOTIFY_ALLOWED_APPS, emptySet()) ?: emptySet()
         set(value) = prefs.edit().putStringSet(KEY_NOTIFY_ALLOWED_APPS, value).apply()
 
     var notificationHideBannerApps: Set<String>
-        get() = prefs.getStringSet(KEY_NOTIFY_HIDE_BANNER_APPS, setOf(
-            "com.zing.zalo",
-            "com.facebook.orca",
-            "org.telegram.messenger"
-        )) ?: emptySet()
+        get() = prefs.getStringSet(KEY_NOTIFY_HIDE_BANNER_APPS, emptySet()) ?: emptySet()
         set(value) = prefs.edit().putStringSet(KEY_NOTIFY_HIDE_BANNER_APPS, value).apply()
 
     fun isAppAllowedForCapsule(packageName: String): Boolean {
@@ -153,13 +141,19 @@ class AppFeaturePreferences(context: Context) {
     }
 
     fun setAppAllowedForCapsule(packageName: String, allowed: Boolean) {
-        val current = notificationAllowedApps.toMutableSet()
-        if (allowed) current.add(packageName) else current.remove(packageName)
-        notificationAllowedApps = current
+        val currentAllowed = notificationAllowedApps.toMutableSet()
+        if (allowed) {
+            currentAllowed.add(packageName)
+        } else {
+            currentAllowed.remove(packageName)
+        }
+        prefs.edit()
+            .putStringSet(KEY_NOTIFY_ALLOWED_APPS, currentAllowed)
+            .apply()
     }
 
     fun isAppHideBanner(packageName: String): Boolean {
-        return isHideOriginalNotification || notificationHideBannerApps.contains(packageName)
+        return notificationHideBannerApps.contains(packageName)
     }
 
     fun setAppHideBanner(packageName: String, hide: Boolean) {
@@ -172,18 +166,23 @@ class AppFeaturePreferences(context: Context) {
         if (channelId.isBlank()) return true
         val disabled = getDisabledChannelsForApp(packageName)
         if (disabled.isEmpty()) return true
+
+        // 1. Direct exact match
         if (disabled.contains(channelId)) return false
 
         val chLower = channelId.lowercase()
+
+        // 2. Prefix and root match (handles dynamic UUID suffixes e.g. zalo_010_chat_channel_...)
         for (d in disabled) {
             val dLower = d.lowercase()
             if (chLower == dLower) return false
-            if (dLower.contains("call") && chLower.contains("call")) return false
-            if ((dLower.contains("chat") || dLower.contains("inapp")) && (chLower.contains("chat") || chLower.contains("msg") || chLower.contains("inapp"))) return false
-            if (dLower.contains("interaction") && chLower.contains("interaction")) return false
-            if (dLower.contains("activity") && chLower.contains("activity")) return false
-            if (dLower.contains("quiet") && chLower.contains("quiet")) return false
-            if (dLower.contains("coupon") && chLower.contains("coupon")) return false
+            if (chLower.startsWith(dLower) || dLower.startsWith(chLower)) return false
+
+            // Synthetic generic fallback categories
+            if (dLower.endsWith("_call") && (chLower.contains("call") || chLower.contains("voip"))) return false
+            if (dLower.endsWith("_chat") && (chLower.contains("chat") || chLower.contains("message") || chLower.contains("direct"))) return false
+            if (dLower.endsWith("_promo") && (chLower.contains("promo") || chLower.contains("coupon") || chLower.contains("offer"))) return false
+            if (dLower.endsWith("_order") && (chLower.contains("order") || chLower.contains("trans") || chLower.contains("delivery") || chLower.contains("food"))) return false
         }
         return true
     }

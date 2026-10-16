@@ -26,20 +26,23 @@ class CapsuleManager(private val context: Context) {
     }
 
     companion object {
-        const val CHANNEL_CHARGING = "magic_charging_v5"
-        const val CHANNEL_DEVICE = "magic_device_v5"
-        const val CHANNEL_SMS = "magic_sms_v5"
-        const val CHANNEL_MEDIA = "magic_media_v5"
-        const val CHANNEL_NOTIFY = "magic_notify_v5"
-        const val CHANNEL_HEADSET = "magic_headset_v5"
-        const val CHANNEL_API = "magic_api_v5"
-        const val CHANNEL_DOWNLOAD = "magic_download_v5"
-        const val CHANNEL_SCREEN_RECORD = "magic_screen_record_v5"
-        const val CHANNEL_CALENDAR = "magic_calendar_v5"
-        const val CHANNEL_FACE_UNLOCK = "magic_face_unlock_v5"
-        const val CHANNEL_PIN_APP = "magic_pin_app_v5"
-        const val CHANNEL_LOUDNESS = "magic_loudness_v5"
-        const val CHANNEL_CALL = "magic_call_v5"
+        @Volatile
+        private var channelsInitialized = false
+
+        const val CHANNEL_CHARGING = "magic_charging_v8"
+        const val CHANNEL_DEVICE = "magic_device_v8"
+        const val CHANNEL_SMS = "magic_sms_v8"
+        const val CHANNEL_MEDIA = "magic_media_v8"
+        const val CHANNEL_NOTIFY = "magic_notify_v8"
+        const val CHANNEL_HEADSET = "magic_headset_v8"
+        const val CHANNEL_API = "magic_api_v8"
+        const val CHANNEL_DOWNLOAD = "magic_download_v8"
+        const val CHANNEL_SCREEN_RECORD = "magic_screen_record_v8"
+        const val CHANNEL_CALENDAR = "magic_calendar_v8"
+        const val CHANNEL_FACE_UNLOCK = "magic_face_unlock_v8"
+        const val CHANNEL_PIN_APP = "magic_pin_app_v8"
+        const val CHANNEL_LOUDNESS = "magic_loudness_v8"
+        const val CHANNEL_CALL = "magic_call_v8"
 
         const val ID_CHARGING = 2026
         const val ID_DEVICE = 2027
@@ -58,31 +61,35 @@ class CapsuleManager(private val context: Context) {
     }
 
     init {
-        createAllChannels()
+        if (!channelsInitialized) {
+            createAllChannels()
+            channelsInitialized = true
+        }
     }
 
     private fun createAllChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Delete legacy channels that were permanently stuck at IMPORTANCE_DEFAULT (3)
-            val legacyChannels = listOf(
-                "capsule_charging", "capsule_device", "capsule_sms", "capsule_media",
-                "capsule_notify", "capsule_headset", "capsule_api", "capsule_download",
-                "capsule_screen_record", "capsule_calendar", "capsule_face_unlock",
-                "capsule_pin_app", "capsule_loudness"
-            )
-            legacyChannels.forEach { oldId ->
-                try {
-                    notificationManager.deleteNotificationChannel(oldId)
-                } catch (_: Exception) {}
+            // 1. Purge legacy channels that were degraded by MagicOS
+            val legacyPrefixes = listOf("magic_charging", "magic_device", "magic_sms", "magic_media",
+                "magic_notify", "magic_headset", "magic_api", "magic_download",
+                "magic_screen_record", "magic_calendar", "magic_face_unlock",
+                "magic_pin_app", "magic_loudness", "magic_call")
+            val legacyVersions = listOf("_v5", "_v6", "_v7")
+            legacyPrefixes.forEach { prefix ->
+                legacyVersions.forEach { ver ->
+                    try { notificationManager.deleteNotificationChannel("$prefix$ver") } catch (_: Exception) {}
+                }
             }
 
+            // 2. Create pristine v8 channels with IMPORTANCE_HIGH (4).
+            // Explicitly enable vibration pattern and lights so MagicOS does not downgrade channel importance to 3.
             val channels = listOf(
-                NotificationChannel(CHANNEL_CHARGING, "Sạc pin & Công suất", NotificationManager.IMPORTANCE_HIGH),
-                NotificationChannel(CHANNEL_DEVICE, "Thông số thiết bị (RAM/Mạng)", NotificationManager.IMPORTANCE_HIGH),
-                NotificationChannel(CHANNEL_SMS, "Mã xác minh & Bưu kiện", NotificationManager.IMPORTANCE_HIGH),
-                NotificationChannel(CHANNEL_MEDIA, "Trình phát nhạc & Lời bài hát", NotificationManager.IMPORTANCE_HIGH),
                 NotificationChannel(CHANNEL_NOTIFY, "Thông báo ứng dụng", NotificationManager.IMPORTANCE_HIGH),
                 NotificationChannel(CHANNEL_CALL, "Cuộc gọi thoại & Video", NotificationManager.IMPORTANCE_HIGH),
+                NotificationChannel(CHANNEL_SMS, "Mã xác minh & Bưu kiện", NotificationManager.IMPORTANCE_HIGH),
+                NotificationChannel(CHANNEL_CHARGING, "Sạc pin & Công suất", NotificationManager.IMPORTANCE_HIGH),
+                NotificationChannel(CHANNEL_DEVICE, "Thông số thiết bị (RAM/Mạng)", NotificationManager.IMPORTANCE_HIGH),
+                NotificationChannel(CHANNEL_MEDIA, "Trình phát nhạc & Lời bài hát", NotificationManager.IMPORTANCE_HIGH),
                 NotificationChannel(CHANNEL_HEADSET, "Tai nghe Bluetooth", NotificationManager.IMPORTANCE_HIGH),
                 NotificationChannel(CHANNEL_API, "API & Webhook", NotificationManager.IMPORTANCE_HIGH),
                 NotificationChannel(CHANNEL_DOWNLOAD, "Tiến độ tải xuống", NotificationManager.IMPORTANCE_HIGH),
@@ -94,11 +101,11 @@ class CapsuleManager(private val context: Context) {
             )
 
             channels.forEach { channel ->
-                // Honor MagicOS requires IMPORTANCE_HIGH to promote notification to Magic Capsule pill
-                channel.setSound(null, null)
-                channel.enableVibration(false)
                 channel.setShowBadge(false)
                 channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                channel.enableVibration(true)
+                channel.vibrationPattern = longArrayOf(0, 40)
+                channel.enableLights(true)
                 notificationManager.createNotificationChannel(channel)
             }
         }
@@ -264,7 +271,7 @@ class CapsuleManager(private val context: Context) {
             details = displayMsg,
             iconRes = R.drawable.ic_notification,
             contentIntent = targetPi,
-            isOngoing = true
+            isOngoing = false
         )
         notificationManager.notify(ID_NOTIFY, notification)
     }
@@ -422,9 +429,10 @@ class CapsuleManager(private val context: Context) {
     }
 
     /**
-     * Generic builder applying Honor MagicOS Magic Capsule extras.
+     * Generic builder applying Honor MagicOS Magic Capsule extras and native CapsuleData parcelable.
      */
-    private fun buildCapsuleNotification(
+    @Suppress("DEPRECATION")
+    fun buildCapsuleNotification(
         channelId: String,
         capsuleText: String,
         title: String,
@@ -444,31 +452,62 @@ class CapsuleManager(private val context: Context) {
             )
         }
 
+        val safeDetails = details.ifBlank { title }
+
         val capsuleExtras = Bundle().apply {
+            // Android 16/17 Promoted Ongoing API standard extras
             putBoolean("android.requestPromotedOngoing", true)
+            putString("android.shortCriticalText", capsuleText)
             putString("android.title.capsule", capsuleText)
             putString("capsule_display_mode", "1")
+
+            // Honor MagicOS Live Notification / Magic Capsule protocol keys
+            putString("is_capsule_business_key_step", "true")
+            putBoolean("com.hihonor.android.capsule.enable", true)
+            putString("com.hihonor.android.capsule.title", capsuleText)
+            putString("com.hihonor.android.capsule.status", "1")
+            putInt("hw_capsule_display_mode", 1)
+            putString("hw_capsule_title", capsuleText)
+            putBoolean("hw_capsule_enable", true)
+            putInt("hn_capsule_display_mode", 1)
+            putString("hn_capsule_title", capsuleText)
+            putBoolean("hn_capsule_enable", true)
+            putInt("live_notification_mode", 1)
+            putString("capsule_title", capsuleText)
+            putString("capsule_content", safeDetails)
+            putInt("capsule_type", 1)
         }
 
         val category = when (channelId) {
             CHANNEL_CHARGING, CHANNEL_DEVICE, CHANNEL_DOWNLOAD, CHANNEL_SCREEN_RECORD -> Notification.CATEGORY_PROGRESS
             CHANNEL_CALL -> Notification.CATEGORY_CALL
-            else -> "msg"
+            else -> Notification.CATEGORY_MESSAGE
         }
+
+        // Only continuous progress channels alert once; message and call capsules MUST alert immediately
+        val isSilentUpdate = isOngoing && (channelId != CHANNEL_NOTIFY && channelId != CHANNEL_CALL && channelId != CHANNEL_SMS)
 
         val builder = Notification.Builder(context, channelId)
             .setSmallIcon(iconRes)
             .setContentTitle(title)
-            .setContentText(details)
+            .setContentText(safeDetails)
             .setContentIntent(targetIntent)
             .setOngoing(isOngoing)
-            .setOnlyAlertOnce(true)
+            .setPriority(Notification.PRIORITY_MAX)
+            .setOnlyAlertOnce(isSilentUpdate)
             .setShowWhen(false)
             .setTicker(capsuleText)
             .setCategory(category)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setStyle(Notification.BigTextStyle().bigText(details))
+            .setStyle(Notification.BigTextStyle().bigText(safeDetails))
             .addExtras(capsuleExtras)
+
+        if (isSilentUpdate && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                val setSilentMethod = Notification.Builder::class.java.getMethod("setSilent", Boolean::class.javaPrimitiveType)
+                setSilentMethod.invoke(builder, true)
+            } catch (_: Exception) {}
+        }
 
         if (largeIcon != null) {
             builder.setLargeIcon(largeIcon)
@@ -477,11 +516,11 @@ class CapsuleManager(private val context: Context) {
         if (Build.VERSION.SDK_INT >= 36) {
             // Android 16/17 (API 36+) Promoted Ongoing status bar chip / Magic Capsule text
             try {
-                val method = Notification.Builder::class.java.getMethod("setShortCriticalText", CharSequence::class.java)
+                val method = Notification.Builder::class.java.getMethod("setShortCriticalText", String::class.java)
                 method.invoke(builder, capsuleText)
             } catch (_: Exception) {
                 try {
-                    val method = Notification.Builder::class.java.getMethod("setShortCriticalText", String::class.java)
+                    val method = Notification.Builder::class.java.getMethod("setShortCriticalText", CharSequence::class.java)
                     method.invoke(builder, capsuleText)
                 } catch (_: Exception) {}
             }
@@ -492,7 +531,24 @@ class CapsuleManager(private val context: Context) {
             } catch (_: Exception) {}
         }
 
-        return builder.build()
+        val notification = builder.build()
+
+        if (isOngoing) {
+            // Explicitly ensure Android 16/17 Promoted Ongoing flag (0x00040000) is combined
+            notification.flags = notification.flags or 0x00040000 or Notification.FLAG_ONGOING_EVENT
+        }
+
+        // Synthesize and attach native Honor MagicOS CapsuleData Parcelable
+        HonorCapsuleHelper.attachHonorCapsuleData(
+            context = context,
+            notification = notification,
+            capsuleText = capsuleText,
+            title = title,
+            details = safeDetails,
+            iconRes = iconRes
+        )
+
+        return notification
     }
 
     fun dismiss(id: Int) {

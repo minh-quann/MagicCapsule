@@ -29,9 +29,7 @@ import io.github.alexzhirkevich.cupertino.icons.filled.Bell
 import io.github.alexzhirkevich.cupertino.icons.filled.Bolt
 import io.github.alexzhirkevich.cupertino.icons.filled.Envelope
 import io.github.alexzhirkevich.cupertino.icons.filled.ExclamationmarkTriangle
-import io.github.alexzhirkevich.cupertino.icons.filled.Headphones
 import io.github.alexzhirkevich.cupertino.icons.filled.Heart
-import io.github.alexzhirkevich.cupertino.icons.filled.MusicNote
 import io.github.alexzhirkevich.cupertino.icons.filled.Paintpalette
 import io.github.alexzhirkevich.cupertino.icons.filled.Pin
 import io.github.alexzhirkevich.cupertino.icons.outlined.ArrowClockwise
@@ -41,7 +39,9 @@ import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronLeftForwardslash
 import io.github.alexzhirkevich.cupertino.icons.outlined.EyeSlash
 import io.github.alexzhirkevich.cupertino.icons.outlined.Faceid
 import io.github.alexzhirkevich.cupertino.icons.outlined.Gearshape
+import io.github.alexzhirkevich.cupertino.icons.outlined.Headphones
 import io.github.alexzhirkevich.cupertino.icons.outlined.Moon
+import io.github.alexzhirkevich.cupertino.icons.outlined.MusicNote
 import io.github.alexzhirkevich.cupertino.icons.outlined.Shield
 import io.github.alexzhirkevich.cupertino.icons.outlined.SliderHorizontal3
 import io.github.alexzhirkevich.cupertino.icons.outlined.Speedometer
@@ -247,7 +247,7 @@ fun SettingsConfigScreen(
                         )
 
                         ConfigItemWithToggle(
-                            icon = CupertinoIcons.Filled.MusicNote,
+                            icon = CupertinoIcons.Default.MusicNote,
                             iconTint = Color(0xFFFF2D55),
                             title = "Lời bài hát",
                             subtitle = "Đồng bộ lời bài hát thời gian thực và điều khiển nhạc từ Spotify, Zing MP3",
@@ -328,7 +328,7 @@ fun SettingsConfigScreen(
                         )
 
                         ConfigItemWithToggle(
-                            icon = CupertinoIcons.Filled.Headphones,
+                            icon = CupertinoIcons.Default.Headphones,
                             iconTint = Color(0xFFAF52DE),
                             title = "Đảo Bluetooth",
                             subtitle = "Tự động hiện tên tai nghe và phần trăm pin khi kết nối",

@@ -33,18 +33,21 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
 import io.github.alexzhirkevich.cupertino.icons.filled.Bell
+import io.github.alexzhirkevich.cupertino.icons.filled.Bolt
 import io.github.alexzhirkevich.cupertino.icons.filled.BubbleLeft
 import io.github.alexzhirkevich.cupertino.icons.filled.CheckmarkCircle
 import io.github.alexzhirkevich.cupertino.icons.filled.ExclamationmarkTriangle
 import io.github.alexzhirkevich.cupertino.icons.filled.Heart
 import io.github.alexzhirkevich.cupertino.icons.filled.Phone
 import io.github.alexzhirkevich.cupertino.icons.outlined.ArrowClockwise
+import io.github.alexzhirkevich.cupertino.icons.outlined.Bolt
 import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronBackward
 import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronDown
 import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronUp
 import io.github.alexzhirkevich.cupertino.icons.outlined.Grid
 import io.github.alexzhirkevich.cupertino.icons.outlined.Shield
 import io.github.alexzhirkevich.cupertino.icons.outlined.SliderHorizontal3
+import com.buwin.magiccapsule.data.notification.ShizukuChannelScanner
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -110,23 +113,25 @@ fun NotificationIslandSubPage(
 
     var isEnabled by remember { mutableStateOf(prefs.isNotificationIslandEnabled) }
     var filterImportant by remember { mutableStateOf(prefs.filterImportantOnly) }
-    var isHideOriginalBanner by remember { mutableStateOf(prefs.isHideOriginalNotification) }
     var durationSec by remember { mutableFloatStateOf(prefs.notificationDurationSec.toFloat()) }
 
     var allowedAppsSet by remember { mutableStateOf(prefs.notificationAllowedApps) }
-    var hideBannerAppsSet by remember { mutableStateOf(prefs.notificationHideBannerApps) }
 
     var isServiceConnected by remember { mutableStateOf(MagicNotificationListenerService.isListenerConnected) }
+    var isShizukuRunning by remember { mutableStateOf(ShizukuChannelScanner.isShizukuInstalledAndRunning()) }
+    var hasShizukuPermission by remember { mutableStateOf(ShizukuChannelScanner.hasShizukuPermission()) }
     var expandedAppPackage by remember { mutableStateOf<String?>(null) }
     var channelConfigVersion by remember { mutableIntStateOf(0) }
 
     val installedAppsList = remember { mutableStateListOf<InstalledAppItem>() }
 
-    // Periodically verify listener service connection & auto-rebind
+    // Periodically verify listener service connection & auto-rebind & Shizuku state
     LaunchedEffect(Unit) {
         MagicNotificationListenerService.ensureServiceBound(context)
         while (isActive) {
             isServiceConnected = MagicNotificationListenerService.isListenerConnected
+            isShizukuRunning = ShizukuChannelScanner.isShizukuInstalledAndRunning()
+            hasShizukuPermission = ShizukuChannelScanner.hasShizukuPermission()
             delay(1500)
         }
     }
@@ -142,6 +147,8 @@ fun NotificationIslandSubPage(
             val items = ArrayList<InstalledAppItem>()
 
             val commonChatPkgs = setOf(
+                "com.grabtaxi.passenger",
+                "com.shopee.vn",
                 "com.zing.zalo",
                 "com.facebook.orca",
                 "org.telegram.messenger",
@@ -151,7 +158,11 @@ fun NotificationIslandSubPage(
                 "com.google.android.gm",
                 "com.instagram.android",
                 "com.zhiliaoapp.musically",
-                "com.ss.android.ugc.trill"
+                "com.ss.android.ugc.trill",
+                "com.lazada.android",
+                "com.mservice.momotransfer",
+                "com.VCB",
+                "vn.com.techcombank.bb.app"
             )
 
             val seenPkgs = HashSet<String>()
@@ -175,7 +186,9 @@ fun NotificationIslandSubPage(
                 val isCommon = commonChatPkgs.contains(pkg) ||
                         pkg.contains("zalo", ignoreCase = true) ||
                         pkg.contains("messenger", ignoreCase = true) ||
-                        pkg.contains("telegram", ignoreCase = true)
+                        pkg.contains("telegram", ignoreCase = true) ||
+                        pkg.contains("grab", ignoreCase = true) ||
+                        pkg.contains("shopee", ignoreCase = true)
 
                 items.add(
                     InstalledAppItem(
@@ -330,60 +343,101 @@ fun NotificationIslandSubPage(
                 }
             }
 
-            // Test Action Buttons
+            // Shizuku Privileged System Scanner Card
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Test Message Button
-                    LiquidButton(
-                        onClick = {
-                            capsuleManager.postNotificationCapsule(
-                                packageName = "com.zing.zalo",
-                                appName = "Zalo",
-                                title = "Nguyễn Văn A",
-                                text = "Alo bạn ơi, có đi cafe không? ☕"
-                            )
-                            coroutineScope.launch {
-                                delay(durationSec.toLong() * 1000L)
-                                capsuleManager.dismiss(CapsuleManager.ID_NOTIFY)
-                            }
-                        },
-                        variant = LiquidButtonVariant.Tinted,
-                        tint = Color(0xFF007AFF),
-                        modifier = Modifier.fillMaxWidth().height(46.dp),
-                        isDark = isDark
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(imageVector = CupertinoIcons.Filled.BubbleLeft, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
-                            Text("Bắn thông báo thử nghiệm Tin nhắn Zalo", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        }
-                    }
+                val cardBg = if (isDark) Color(0xFF141416) else Color(0xFFFFFFFF)
+                val borderColor = cardBorderColor(isDark)
+                var isShizukuScanning by remember { mutableStateOf(false) }
 
-                    // Test Call Button
-                    LiquidButton(
-                        onClick = {
-                            capsuleManager.postCallCapsule(
-                                packageName = "com.zing.zalo",
-                                appName = "Zalo",
-                                callerName = "Nguyễn Văn A",
-                                callStatus = "Cuộc gọi thoại đến..."
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(cardBg)
+                        .border(1.dp, borderColor, RoundedCornerShape(20.dp))
+                        .padding(16.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = CupertinoIcons.Default.Bolt,
+                                contentDescription = null,
+                                tint = if (hasShizukuPermission) Color(0xFF34C759) else Color(0xFF007AFF),
+                                modifier = Modifier.size(22.dp)
                             )
-                            coroutineScope.launch {
-                                delay(8000L)
-                                capsuleManager.dismissCallCapsule()
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = if (hasShizukuPermission)
+                                        "⚡ Quét sâu hệ thống (Shizuku: Đã cấp quyền)"
+                                    else if (isShizukuRunning)
+                                        "⚡ Phát hiện Shizuku trên máy"
+                                    else
+                                        "⚡ Quét thể loại nâng cao (Shizuku)",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isDark) Color.White else Color(0xFF1C1917)
+                                )
+                                Text(
+                                    text = if (hasShizukuPermission)
+                                        "Đã có quyền đọc trực tiếp 100% tất cả các kênh thông báo của mọi app (Grab, Zalo, Ngân hàng...) từ hệ điều hành Android."
+                                    else if (isShizukuRunning)
+                                        "Cấp quyền Shizuku 1 chạm để tự động trích xuất toàn bộ kênh thông báo hệ thống của tất cả ứng dụng mà không cần root."
+                                    else
+                                        "Magic Capsule đã nạp sẵn danh mục kênh cho Grab, Zalo, Shopee, Telegram, Ngân hàng... Nếu cài Shizuku sẽ quét được thêm toàn bộ các app khác.",
+                                    fontSize = 11.sp,
+                                    color = if (isDark) Color(0xFFA8A29E) else Color(0xFF78716C)
+                                )
                             }
-                        },
-                        variant = LiquidButtonVariant.Tinted,
-                        tint = Color(0xFF34C759),
-                        modifier = Modifier.fillMaxWidth().height(46.dp),
-                        isDark = isDark
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(imageVector = CupertinoIcons.Filled.Phone, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
-                            Text("Bắn thông báo thử nghiệm Cuộc gọi Zalo", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+
+                        if (hasShizukuPermission) {
+                            LiquidButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        isShizukuScanning = true
+                                        val scanned = ShizukuChannelScanner.scanAllSystemChannels(context)
+                                        channelConfigVersion++
+                                        isShizukuScanning = false
+                                    }
+                                },
+                                variant = LiquidButtonVariant.Tinted,
+                                tint = Color(0xFF34C759),
+                                modifier = Modifier.fillMaxWidth().height(38.dp),
+                                isDark = isDark
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(imageVector = CupertinoIcons.Default.ArrowClockwise, contentDescription = null, modifier = Modifier.size(15.dp), tint = Color.White)
+                                    Text(
+                                        text = if (isShizukuScanning) "Đang quét toàn bộ hệ thống..." else "Quét sâu toàn bộ kênh thông báo hệ thống",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        } else if (isShizukuRunning) {
+                            LiquidButton(
+                                onClick = {
+                                    ShizukuChannelScanner.requestShizukuPermission()
+                                },
+                                variant = LiquidButtonVariant.Tinted,
+                                tint = Color(0xFF007AFF),
+                                modifier = Modifier.fillMaxWidth().height(38.dp),
+                                isDark = isDark
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(imageVector = CupertinoIcons.Default.Bolt, contentDescription = null, modifier = Modifier.size(15.dp), tint = Color.White)
+                                    Text("Cấp quyền Shizuku 1 chạm", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                }
+                            }
                         }
                     }
                 }
             }
+
 
             // Master Toggles Card
             item {
@@ -410,17 +464,6 @@ fun NotificationIslandSubPage(
                             isDark = isDark
                         )
 
-                        // Hide original banner toggle
-                        SubpageToggleRow(
-                            title = "Chỉ hiện Magic Capsule (Ẩn biểu ngữ gốc toàn cục)",
-                            subtitle = "Tự động tắt biểu ngữ popup tràn viền của hệ thống, chỉ hiện viên thuốc trên camera",
-                            selected = isHideOriginalBanner,
-                            onSelect = {
-                                isHideOriginalBanner = it
-                                prefs.isHideOriginalNotification = it
-                            },
-                            isDark = isDark
-                        )
 
                         SubpageToggleRow(
                             title = "Chỉ lọc tin nhắn quan trọng",
@@ -481,7 +524,6 @@ fun NotificationIslandSubPage(
                 val cardBg = if (isDark) Color(0xFF141416) else Color(0xFFFFFFFF)
                 val borderColor = cardBorderColor(isDark)
                 val isAppAllowed = allowedAppsSet.contains(appItem.packageName)
-                val isAppHideBanner = hideBannerAppsSet.contains(appItem.packageName)
                 val isExpanded = expandedAppPackage == appItem.packageName
 
                 @Suppress("UNUSED_VARIABLE")
@@ -492,7 +534,7 @@ fun NotificationIslandSubPage(
                 }
                 var isLoadingChannels by remember(appItem.packageName) { mutableStateOf(false) }
 
-                LaunchedEffect(appItem.packageName, isExpanded) {
+                LaunchedEffect(appItem.packageName, isExpanded, channelConfigVersion) {
                     if (isExpanded) {
                         isLoadingChannels = true
                         val channels = withContext(Dispatchers.IO) {
@@ -518,7 +560,7 @@ fun NotificationIslandSubPage(
                                 .fillMaxWidth()
                                 .clickable {
                                     expandedAppPackage = if (isExpanded) null else appItem.packageName
-                                }
+                                },
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -618,38 +660,7 @@ fun NotificationIslandSubPage(
                                     color = if (isDark) Color(0xFF2C2C2E) else Color(0xFFE5E5EA)
                                 )
 
-                                // Per-app hide original banner toggle
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                                        Text(
-                                            text = "Chỉ hiện Magic Capsule (Ẩn popup gốc)",
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = if (isDark) Color.White else Color(0xFF1C1917)
-                                        )
-                                        Text(
-                                            text = "Tự động tắt thanh popup che màn hình của riêng ${appItem.appName}",
-                                            fontSize = 11.sp,
-                                            color = if (isDark) Color(0xFF78716C) else Color(0xFFA8A29E)
-                                        )
-                                    }
-                                    LiquidToggle(
-                                        checked = isAppHideBanner,
-                                        onCheckedChange = { hide ->
-                                            prefs.setAppHideBanner(appItem.packageName, hide)
-                                            hideBannerAppsSet = prefs.notificationHideBannerApps
-                                        }
-                                    )
-                                }
 
-                                HorizontalDivider(
-                                    thickness = 0.5.dp,
-                                    color = if (isDark) Color(0xFF2C2C2E) else Color(0xFFE5E5EA)
-                                )
 
                                 // Real System Channels Header with dynamic count and re-scan button
                                 Row(
@@ -689,7 +700,10 @@ fun NotificationIslandSubPage(
                                                 coroutineScope.launch {
                                                     isLoadingChannels = true
                                                     val updated = withContext(Dispatchers.IO) {
-                                                        NotificationChannelRepository.fetchLiveChannels(appItem.packageName)
+                                                        if (ShizukuChannelScanner.hasShizukuPermission()) {
+                                                            ShizukuChannelScanner.scanAllSystemChannels(context)
+                                                        }
+                                                        NotificationChannelRepository.getChannelsForPackage(context, appItem.packageName)
                                                     }
                                                     if (updated.isNotEmpty()) {
                                                         appChannels = updated
@@ -730,9 +744,10 @@ fun NotificationIslandSubPage(
                                     appChannels.forEach { ch ->
                                         val isChannelAllowed = prefs.isAppChannelAllowed(appItem.packageName, ch.id)
                                         val chIcon = when {
-                                            ch.id.contains("call", true) || ch.name.contains("gọi", true) || ch.name.contains("call", true) || ch.name.contains("voice", true) -> CupertinoIcons.Filled.Phone
+                                            ch.id.contains("call", true) || ch.name.contains("gọi", true) || ch.name.contains("call", true) || ch.name.contains("voip", true) -> CupertinoIcons.Filled.Phone
                                             ch.id.contains("chat", true) || ch.id.contains("msg", true) || ch.name.contains("tin nhắn", true) || ch.name.contains("chat", true) || ch.name.contains("message", true) -> CupertinoIcons.Filled.BubbleLeft
                                             ch.id.contains("like", true) || ch.id.contains("comment", true) || ch.name.contains("thích", true) || ch.name.contains("bình luận", true) || ch.name.contains("tương tác", true) -> CupertinoIcons.Filled.Heart
+                                            ch.id.contains("live", true) || ch.id.contains("activity", true) || ch.id.contains("trans", true) || ch.id.contains("order", true) -> CupertinoIcons.Filled.Bolt
                                             else -> CupertinoIcons.Filled.Bell
                                         }
 

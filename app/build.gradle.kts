@@ -53,6 +53,10 @@ dependencies {
     implementation(libs.kyant.backdrop)
     implementation(libs.kyant.shapes)
 
+    // Shizuku API (Privileged system command execution for notification inspection)
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

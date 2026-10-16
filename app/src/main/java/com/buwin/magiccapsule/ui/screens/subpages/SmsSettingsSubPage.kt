@@ -16,13 +16,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MarkEmailRead
-import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
+import io.github.alexzhirkevich.cupertino.icons.filled.Envelope
+import io.github.alexzhirkevich.cupertino.icons.filled.Key
+import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronBackward
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -91,7 +91,7 @@ fun SmsSettingsSubPage(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.VpnKey,
+                                imageVector = CupertinoIcons.Filled.Key,
                                 contentDescription = null,
                                 tint = Color(0xFFFF9500),
                                 modifier = Modifier.size(20.dp)
@@ -188,7 +188,7 @@ fun SmsSettingsSubPage(
                     isDark = isDark
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(imageVector = Icons.Default.MarkEmailRead, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFFFF9500))
+                        Icon(imageVector = CupertinoIcons.Filled.Envelope, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFFFF9500))
                         Text("Gửi giả lập mã OTP (829415) lên Magic Capsule", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -205,7 +205,7 @@ fun SmsSettingsSubPage(
             isDark = isDark,
             navigationIcon = {
                 LiquidRoundButton(onClick = onBack, size = 38.dp, isDark = isDark) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại", modifier = Modifier.size(18.dp))
+                    Icon(imageVector = CupertinoIcons.Default.ChevronBackward, contentDescription = "Quay lại", modifier = Modifier.size(18.dp))
                 }
             },
             title = {

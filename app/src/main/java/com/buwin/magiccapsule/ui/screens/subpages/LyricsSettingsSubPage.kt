@@ -16,10 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.PlayArrow
+import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
+import io.github.alexzhirkevich.cupertino.icons.filled.Play
+import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronBackward
+import io.github.alexzhirkevich.cupertino.icons.outlined.MusicNote
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -86,7 +86,7 @@ fun LyricsSettingsSubPage(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.MusicNote,
+                                imageVector = CupertinoIcons.Default.MusicNote,
                                 contentDescription = null,
                                 tint = Color(0xFFAF52DE),
                                 modifier = Modifier.size(20.dp)
@@ -150,7 +150,7 @@ fun LyricsSettingsSubPage(
                     isDark = isDark
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFFAF52DE))
+                        Icon(imageVector = CupertinoIcons.Filled.Play, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFFAF52DE))
                         Text("Gửi thử nghiệm Đảo bài hát lên Honor Capsule", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -167,7 +167,7 @@ fun LyricsSettingsSubPage(
             isDark = isDark,
             navigationIcon = {
                 LiquidRoundButton(onClick = onBack, size = 38.dp, isDark = isDark) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại", modifier = Modifier.size(18.dp))
+                    Icon(imageVector = CupertinoIcons.Default.ChevronBackward, contentDescription = "Quay lại", modifier = Modifier.size(18.dp))
                 }
             },
             title = {

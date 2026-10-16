@@ -16,9 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Face
+import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
+import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronBackward
+import io.github.alexzhirkevich.cupertino.icons.outlined.Faceid
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -85,7 +85,7 @@ fun FaceUnlockSubPage(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Face,
+                                imageVector = CupertinoIcons.Default.Faceid,
                                 contentDescription = null,
                                 tint = Color(0xFF007AFF),
                                 modifier = Modifier.size(20.dp)
@@ -162,7 +162,7 @@ fun FaceUnlockSubPage(
             isDark = isDark,
             navigationIcon = {
                 LiquidRoundButton(onClick = onBack, size = 38.dp, isDark = isDark) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại", modifier = Modifier.size(18.dp))
+                    Icon(imageVector = CupertinoIcons.Default.ChevronBackward, contentDescription = "Quay lại", modifier = Modifier.size(18.dp))
                 }
             },
             title = {

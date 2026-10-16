@@ -18,10 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Refresh
+import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
+import io.github.alexzhirkevich.cupertino.icons.outlined.ArrowClockwise
+import io.github.alexzhirkevich.cupertino.icons.outlined.Checkmark
+import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronBackward
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -84,7 +84,7 @@ fun RefreshRateSubPage(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = Color(0xFF007AFF), modifier = Modifier.size(20.dp))
+                            Icon(imageVector = CupertinoIcons.Default.ArrowClockwise, contentDescription = null, tint = Color(0xFF007AFF), modifier = Modifier.size(20.dp))
                             Text("Tốc độ làm mới dữ liệu đảo", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color.White else Color(0xFF1C1917))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -143,7 +143,7 @@ fun RefreshRateSubPage(
                                         modifier = Modifier.size(24.dp).clip(CircleShape).background(Color(0xFF007AFF)),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                        Icon(imageVector = CupertinoIcons.Default.Checkmark, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                                     }
                                 }
                             }
@@ -162,7 +162,7 @@ fun RefreshRateSubPage(
             isDark = isDark,
             navigationIcon = {
                 LiquidRoundButton(onClick = onBack, size = 38.dp, isDark = isDark) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại", modifier = Modifier.size(18.dp))
+                    Icon(imageVector = CupertinoIcons.Default.ChevronBackward, contentDescription = "Quay lại", modifier = Modifier.size(18.dp))
                 }
             },
             title = {

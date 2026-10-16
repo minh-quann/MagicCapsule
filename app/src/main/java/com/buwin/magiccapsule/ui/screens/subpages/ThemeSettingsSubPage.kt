@@ -29,28 +29,25 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccessibilityNew
-import androidx.compose.material.icons.filled.BatteryChargingFull
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Headphones
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.QuestionMark
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Sms
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import io.github.alexzhirkevich.cupertino.icons.CupertinoIcons
+import io.github.alexzhirkevich.cupertino.icons.filled.Bell
+import io.github.alexzhirkevich.cupertino.icons.filled.Envelope
+import io.github.alexzhirkevich.cupertino.icons.filled.Eye
+import io.github.alexzhirkevich.cupertino.icons.filled.Mic
+import io.github.alexzhirkevich.cupertino.icons.filled.Paintpalette
+import io.github.alexzhirkevich.cupertino.icons.filled.Person
+import io.github.alexzhirkevich.cupertino.icons.outlined.ArrowClockwise
+import io.github.alexzhirkevich.cupertino.icons.outlined.Battery100
+import io.github.alexzhirkevich.cupertino.icons.outlined.Calendar
+import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronBackward
+import io.github.alexzhirkevich.cupertino.icons.outlined.Gearshape
+import io.github.alexzhirkevich.cupertino.icons.outlined.Headphones
+import io.github.alexzhirkevich.cupertino.icons.outlined.Moon
+import io.github.alexzhirkevich.cupertino.icons.outlined.Shield
+import io.github.alexzhirkevich.cupertino.icons.outlined.SunMax
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -176,7 +173,7 @@ fun ThemeSettingsSubPage(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Palette, contentDescription = null, tint = Color(0xFF007AFF), modifier = Modifier.size(20.dp))
+                            Icon(imageVector = CupertinoIcons.Filled.Paintpalette, contentDescription = null, tint = Color(0xFF007AFF), modifier = Modifier.size(20.dp))
                             Text("Chế độ giao diện Liquid Glass", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color.White else Color(0xFF1C1917))
                         }
 
@@ -188,7 +185,7 @@ fun ThemeSettingsSubPage(
                         ) {
                             ThemeModePill(
                                 title = "Tự động",
-                                icon = Icons.Default.Speed,
+                                icon = CupertinoIcons.Default.Gearshape,
                                 isSelected = themePreferences.currentThemeMode == AppThemeMode.SYSTEM,
                                 onClick = { themePreferences.setThemeMode(AppThemeMode.SYSTEM) },
                                 isDark = isDark,
@@ -196,7 +193,7 @@ fun ThemeSettingsSubPage(
                             )
                             ThemeModePill(
                                 title = "Sáng",
-                                icon = Icons.Default.LightMode,
+                                icon = CupertinoIcons.Default.SunMax,
                                 isSelected = themePreferences.currentThemeMode == AppThemeMode.LIGHT,
                                 onClick = { themePreferences.setThemeMode(AppThemeMode.LIGHT) },
                                 isDark = isDark,
@@ -204,7 +201,7 @@ fun ThemeSettingsSubPage(
                             )
                             ThemeModePill(
                                 title = "Tối",
-                                icon = Icons.Default.DarkMode,
+                                icon = CupertinoIcons.Default.Moon,
                                 isSelected = themePreferences.currentThemeMode == AppThemeMode.DARK,
                                 onClick = { themePreferences.setThemeMode(AppThemeMode.DARK) },
                                 isDark = isDark,
@@ -233,7 +230,7 @@ fun ThemeSettingsSubPage(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Security, contentDescription = null, tint = Color(0xFF34C759), modifier = Modifier.size(22.dp))
+                            Icon(imageVector = CupertinoIcons.Default.Shield, contentDescription = null, tint = Color(0xFF34C759), modifier = Modifier.size(22.dp))
                             Column {
                                 Text("Trung tâm quyền hạn Honor MagicOS", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color.White else Color(0xFF1C1917))
                                 Text("Đảm bảo các quyền cần thiết để mọi tính năng đảo hoạt động mượt mà và không bị hệ thống tắt ngầm.", fontSize = 12.sp, color = if (isDark) Color(0xFFA8A29E) else Color(0xFF78716C))
@@ -244,7 +241,7 @@ fun ThemeSettingsSubPage(
 
                         // 1. Notification Permission
                         PermissionActionRow(
-                            icon = Icons.Default.Notifications,
+                            icon = CupertinoIcons.Filled.Bell,
                             iconTint = Color(0xFF007AFF),
                             title = "Quyền gửi thông báo",
                             subtitle = "Cho phép gửi và ghim Dynamic Capsule lên thanh trạng thái",
@@ -260,7 +257,7 @@ fun ThemeSettingsSubPage(
 
                         // 2. Notification Listener
                         PermissionActionRow(
-                            icon = Icons.Default.Sync,
+                            icon = CupertinoIcons.Default.ArrowClockwise,
                             iconTint = Color(0xFFAF52DE),
                             title = "Truy cập thông báo (Notification Access)",
                             subtitle = "Cần thiết cho Đảo Âm nhạc, Đảo Zalo/Telegram và Bắt mã OTP",
@@ -273,7 +270,7 @@ fun ThemeSettingsSubPage(
 
                         // 3. Battery Optimization
                         PermissionActionRow(
-                            icon = Icons.Default.BatteryChargingFull,
+                            icon = CupertinoIcons.Default.Battery100,
                             iconTint = Color(0xFFFF9500),
                             title = "Bỏ qua tối ưu hóa pin",
                             subtitle = "Ngăn MagicOS tạm dừng Capsule khi màn hình tắt",
@@ -291,7 +288,7 @@ fun ThemeSettingsSubPage(
 
                         // 4. Accessibility Service Keep-Alive
                         PermissionActionRow(
-                            icon = Icons.Default.AccessibilityNew,
+                            icon = CupertinoIcons.Filled.Person,
                             iconTint = Color(0xFF34C759),
                             title = "Hỗ trợ tiếp cận (Chạy ngầm bất tử)",
                             subtitle = "Giữ tiến trình Magic Capsule có độ ưu tiên cao nhất trên MagicOS",
@@ -304,7 +301,7 @@ fun ThemeSettingsSubPage(
 
                         // 5. SMS Permission
                         PermissionActionRow(
-                            icon = Icons.Default.Sms,
+                            icon = CupertinoIcons.Filled.Envelope,
                             iconTint = Color(0xFF30D158),
                             title = "Quyền nhận tin nhắn SMS (OTP)",
                             subtitle = "Bắt mã OTP ngân hàng và mã bưu kiện trực tiếp siêu tốc",
@@ -317,7 +314,7 @@ fun ThemeSettingsSubPage(
 
                         // 6. Calendar Permission
                         PermissionActionRow(
-                            icon = Icons.Default.CalendarMonth,
+                            icon = CupertinoIcons.Default.Calendar,
                             iconTint = Color(0xFFFF2D55),
                             title = "Quyền đọc lịch sự kiện",
                             subtitle = "Hiển thị đếm ngược thời gian đến cuộc họp và sự kiện sắp tới",
@@ -330,7 +327,7 @@ fun ThemeSettingsSubPage(
 
                         // 7. Usage Stats
                         PermissionActionRow(
-                            icon = Icons.Default.Visibility,
+                            icon = CupertinoIcons.Filled.Eye,
                             iconTint = Color(0xFF5856D6),
                             title = "Truy cập dữ liệu sử dụng ứng dụng",
                             subtitle = "Cần cho tính năng Ghim ứng dụng và Trở về nhanh từ QS Tile",
@@ -343,7 +340,7 @@ fun ThemeSettingsSubPage(
 
                         // 8. Bluetooth Connect
                         PermissionActionRow(
-                            icon = Icons.Default.Headphones,
+                            icon = CupertinoIcons.Default.Headphones,
                             iconTint = Color(0xFF007AFF),
                             title = "Quyền kết nối Bluetooth",
                             subtitle = "Đọc phần trăm pin tai nghe Bluetooth và hiển thị popup",
@@ -356,7 +353,7 @@ fun ThemeSettingsSubPage(
 
                         // 9. Microphone / Loudness
                         PermissionActionRow(
-                            icon = Icons.Default.Mic,
+                            icon = CupertinoIcons.Filled.Mic,
                             iconTint = Color(0xFFFF9500),
                             title = "Quyền ghi âm Micro (Đo độ ồn)",
                             subtitle = "Chỉ dùng để tính toán mức decibel dB thực tế của môi trường",
@@ -381,7 +378,7 @@ fun ThemeSettingsSubPage(
             isDark = isDark,
             navigationIcon = {
                 LiquidRoundButton(onClick = onBack, size = 38.dp, isDark = isDark) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại", modifier = Modifier.size(18.dp))
+                    Icon(imageVector = CupertinoIcons.Default.ChevronBackward, contentDescription = "Quay lại", modifier = Modifier.size(18.dp))
                 }
             },
             title = {

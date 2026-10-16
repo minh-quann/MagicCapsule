@@ -53,9 +53,12 @@ class DeviceMonitorService : Service() {
         }
     }
 
+    private lateinit var capsuleManager: CapsuleManager
+
     override fun onCreate() {
         super.onCreate()
         isRunning = true
+        capsuleManager = CapsuleManager(this)
         ForegroundHelper.startForegroundServiceCompat(
             service = this,
             notificationId = CapsuleManager.ID_DEVICE,
@@ -67,7 +70,7 @@ class DeviceMonitorService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val initialNotification = buildNotification("Đang tải dữ liệu...", "RAM & Tốc độ mạng")
+        val initialNotification = buildNotification("RAM...", "RAM & Tốc độ mạng", "Đang khởi tạo cảm biến...")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(CapsuleManager.ID_DEVICE, initialNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
@@ -90,7 +93,7 @@ class DeviceMonitorService : Service() {
                         if (isNotEmpty()) append(" · ")
                         append(String.format(Locale.US, "%.1f°C", stats.deviceTempC))
                     }
-                }
+                }.ifBlank { "RAM ${stats.ramUsedPercent}%" }
 
                 val title = String.format(Locale.US, "RAM: %.1fGB / %.1fGB (%d%%)", stats.ramUsedGb, stats.ramTotalGb, stats.ramUsedPercent)
                 val details = "↓ ${stats.downloadSpeedText}  ↑ ${stats.uploadSpeedText}  •  ${String.format(Locale.US, "%.1f°C", stats.deviceTempC)}"
@@ -107,43 +110,14 @@ class DeviceMonitorService : Service() {
     }
 
     private fun buildNotification(capsuleText: String, title: String, details: String = ""): Notification {
-        val capsuleExtras = Bundle().apply {
-            putBoolean("android.requestPromotedOngoing", true)
-            putString("android.title.capsule", capsuleText)
-            putString("capsule_display_mode", "1")
-        }
-
-        val builder = Notification.Builder(this, CapsuleManager.CHANNEL_DEVICE)
-            .setSmallIcon(R.drawable.ic_charging)
-            .setContentTitle(title)
-            .setContentText(details)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setShowWhen(false)
-            .setTicker(capsuleText)
-            .setCategory(Notification.CATEGORY_PROGRESS)
-            .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setStyle(Notification.BigTextStyle().bigText(details))
-            .addExtras(capsuleExtras)
-
-        if (Build.VERSION.SDK_INT >= 36) {
-            try {
-                val method = Notification.Builder::class.java.getMethod("setShortCriticalText", CharSequence::class.java)
-                method.invoke(builder, capsuleText)
-            } catch (_: Exception) {
-                try {
-                    val method = Notification.Builder::class.java.getMethod("setShortCriticalText", String::class.java)
-                    method.invoke(builder, capsuleText)
-                } catch (_: Exception) {}
-            }
-
-            try {
-                val method = Notification.Builder::class.java.getMethod("setRequestPromotedOngoing", Boolean::class.javaPrimitiveType)
-                method.invoke(builder, true)
-            } catch (_: Exception) {}
-        }
-
-        return builder.build()
+        return capsuleManager.buildCapsuleNotification(
+            channelId = CapsuleManager.CHANNEL_DEVICE,
+            capsuleText = capsuleText,
+            title = title,
+            details = details.ifBlank { "RAM & Mạng thời gian thực" },
+            iconRes = R.drawable.ic_ram,
+            isOngoing = true
+        )
     }
 
     override fun onDestroy() {

@@ -60,6 +60,25 @@ object NotificationClassifier {
 
     private fun isCallFromExtras(extras: android.os.Bundle?): Boolean {
         if (extras == null) return false
+        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.lowercase() ?: ""
+        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.lowercase() ?: ""
+        val combined = "$title $text"
+
+        // Missed calls are event notifications, NOT active ringing calls
+        if (combined.contains("nhỡ") || combined.contains("missed") || combined.contains("bỏ lỡ")) {
+            return false
+        }
+
+        val callType = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            extras.getInt(Notification.EXTRA_CALL_TYPE, -1)
+        } else {
+            extras.getInt("android.callType", -1)
+        }
+        // CallType 3 = MISSED_TYPE
+        if (callType == 3) {
+            return false
+        }
+
         if (extras.containsKey(Notification.EXTRA_CALL_TYPE) ||
             extras.containsKey("android.callType") ||
             extras.containsKey("android.callPerson")) {
@@ -69,11 +88,9 @@ object NotificationClassifier {
         if (template.contains("CallStyle", ignoreCase = true)) {
             return true
         }
-        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.lowercase() ?: ""
-        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.lowercase() ?: ""
-        return title.contains("cuộc gọi") || text.contains("cuộc gọi") ||
+        return (title.contains("cuộc gọi") || text.contains("cuộc gọi") ||
                 title.contains("incoming call") || text.contains("incoming call") ||
-                text.contains("đang gọi") || title.contains("đang gọi")
+                text.contains("đang gọi") || title.contains("đang gọi"))
     }
 
     private fun isCallFromActions(notification: Notification): Boolean {
@@ -81,15 +98,19 @@ object NotificationClassifier {
         var hasAccept = false
         var hasDecline = false
         for (action in actions) {
+            // Direct reply text input indicates chat messaging, not a call
+            if (action.remoteInputs?.isNotEmpty() == true) {
+                return false
+            }
             val title = action.title?.toString()?.lowercase() ?: ""
-            if (title.contains("trả lời") || title.contains("nghe") || title.contains("answer") || title.contains("chấp nhận")) {
+            if (title.contains("nghe") || title.contains("answer") || title.contains("chấp nhận")) {
                 hasAccept = true
             }
             if (title.contains("từ chối") || title.contains("bỏ qua") || title.contains("decline") || title.contains("hang up")) {
                 hasDecline = true
             }
         }
-        return hasAccept || (hasAccept && hasDecline)
+        return hasAccept && hasDecline
     }
 
     private fun isChatFromExtras(extras: android.os.Bundle?): Boolean {

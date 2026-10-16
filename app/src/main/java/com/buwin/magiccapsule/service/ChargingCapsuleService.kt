@@ -15,6 +15,7 @@ import android.os.Bundle
 import android.os.IBinder
 import com.buwin.magiccapsule.MainActivity
 import com.buwin.magiccapsule.R
+import com.buwin.magiccapsule.capsule.CapsuleManager
 import com.buwin.magiccapsule.data.battery.BatteryStatsReader
 import com.buwin.magiccapsule.data.model.BatteryInfo
 import com.buwin.magiccapsule.data.model.PluggedType
@@ -55,8 +56,8 @@ class ChargingCapsuleService : Service() {
     }
 
     companion object {
-        const val CHANNEL_ID = "magic_charging_live_v5"
-        const val NOTIFICATION_ID = 2026
+        const val CHANNEL_ID = CapsuleManager.CHANNEL_CHARGING
+        const val NOTIFICATION_ID = CapsuleManager.ID_CHARGING
         const val ACTION_START = "com.buwin.magiccapsule.action.START"
         const val ACTION_STOP = "com.buwin.magiccapsule.action.STOP"
         const val ACTION_FORCE_TEST = "com.buwin.magiccapsule.action.FORCE_TEST"
@@ -83,9 +84,12 @@ class ChargingCapsuleService : Service() {
         }
     }
 
+    private lateinit var capsuleManager: CapsuleManager
+
     override fun onCreate() {
         super.onCreate()
         isRunning = true
+        capsuleManager = CapsuleManager(this)
         ForegroundHelper.startForegroundServiceCompat(
             service = this,
             notificationId = NOTIFICATION_ID,
@@ -96,7 +100,6 @@ class ChargingCapsuleService : Service() {
         preferences = CapsulePreferences(this)
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        createNotificationChannel()
         registerBatteryReceiver()
     }
 
@@ -209,68 +212,15 @@ class ChargingCapsuleService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Honor MagicOS Live Capsule protocol extras
-        val capsuleExtras = Bundle().apply {
-            putBoolean("android.requestPromotedOngoing", true)
-            putString("android.title.capsule", capsuleTitle)
-            putString("capsule_display_mode", "1")
-        }
-
-        val builder = Notification.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_charging)
-            .setContentTitle(titleText)
-            .setContentText(details)
-            .setContentIntent(pendingOpenApp)
-            .setDeleteIntent(pendingStop)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setShowWhen(false)
-            .setTicker(capsuleTitle)
-            .setCategory(Notification.CATEGORY_PROGRESS)
-            .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setStyle(Notification.BigTextStyle().bigText(details))
-            .addExtras(capsuleExtras)
-
-        // Android 16/17 (API 36+) Promoted Ongoing status bar chip / Magic Capsule text
-        if (Build.VERSION.SDK_INT >= 36) {
-            try {
-                val method = Notification.Builder::class.java.getMethod("setShortCriticalText", CharSequence::class.java)
-                method.invoke(builder, capsuleTitle)
-            } catch (_: Exception) {
-                try {
-                    val method = Notification.Builder::class.java.getMethod("setShortCriticalText", String::class.java)
-                    method.invoke(builder, capsuleTitle)
-                } catch (_: Exception) {}
-            }
-
-            try {
-                val method = Notification.Builder::class.java.getMethod("setRequestPromotedOngoing", Boolean::class.javaPrimitiveType)
-                method.invoke(builder, true)
-            } catch (_: Exception) {}
-        }
-
-        return builder.build()
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                notificationManager.deleteNotificationChannel("charging_capsule")
-            } catch (_: Exception) {}
-
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Magic Capsule - Đo công suất sạc",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Hiển thị công suất sạc trực tiếp trên Magic Capsule trạng thái của Honor MagicOS"
-                setSound(null, null)
-                enableVibration(false)
-                setShowBadge(false)
-                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-            }
-            notificationManager.createNotificationChannel(channel)
-        }
+        return capsuleManager.buildCapsuleNotification(
+            channelId = CapsuleManager.CHANNEL_CHARGING,
+            capsuleText = capsuleTitle,
+            title = titleText,
+            details = details,
+            iconRes = R.drawable.ic_charging,
+            contentIntent = pendingOpenApp,
+            isOngoing = true
+        )
     }
 
     private fun registerBatteryReceiver() {

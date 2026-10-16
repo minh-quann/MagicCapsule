@@ -24,9 +24,7 @@ import io.github.alexzhirkevich.cupertino.icons.filled.Bell
 import io.github.alexzhirkevich.cupertino.icons.filled.Bolt
 import io.github.alexzhirkevich.cupertino.icons.filled.Envelope
 import io.github.alexzhirkevich.cupertino.icons.filled.Gearshape
-import io.github.alexzhirkevich.cupertino.icons.filled.Headphones
 import io.github.alexzhirkevich.cupertino.icons.filled.Mic
-import io.github.alexzhirkevich.cupertino.icons.filled.MusicNote
 import io.github.alexzhirkevich.cupertino.icons.filled.Paintpalette
 import io.github.alexzhirkevich.cupertino.icons.filled.Pin
 import io.github.alexzhirkevich.cupertino.icons.filled.Video
@@ -34,7 +32,9 @@ import io.github.alexzhirkevich.cupertino.icons.outlined.Calendar
 import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronForward
 import io.github.alexzhirkevich.cupertino.icons.outlined.ChevronLeftForwardslashChevronRight
 import io.github.alexzhirkevich.cupertino.icons.outlined.Faceid
+import io.github.alexzhirkevich.cupertino.icons.outlined.Headphones
 import io.github.alexzhirkevich.cupertino.icons.outlined.Moon
+import io.github.alexzhirkevich.cupertino.icons.outlined.MusicNote
 import io.github.alexzhirkevich.cupertino.icons.outlined.Speedometer
 import io.github.alexzhirkevich.cupertino.icons.outlined.SunMax
 import androidx.compose.material3.Icon
@@ -212,7 +212,7 @@ fun FeaturesOverviewScreen(
             // 4. Media & Lyrics
             item {
                 FeatureCard(
-                    icon = CupertinoIcons.Filled.MusicNote,
+                    icon = CupertinoIcons.Default.MusicNote,
                     iconTint = Color(0xFFAF52DE),
                     title = "🎵 Bài hát & Trình phát nhạc",
                     subtitle = "Đồng bộ tên bài hát và nghệ sĩ từ Spotify, Apple Music, Zing MP3",
@@ -246,7 +246,7 @@ fun FeaturesOverviewScreen(
             // 6. Bluetooth Headset
             item {
                 FeatureCard(
-                    icon = CupertinoIcons.Filled.Headphones,
+                    icon = CupertinoIcons.Default.Headphones,
                     iconTint = Color(0xFF30D158),
                     title = "🎧 Tai nghe Bluetooth",
                     subtitle = "Hiệu ứng Dynamic Island chào đón khi kết nối tai nghe kèm thời lượng pin",
